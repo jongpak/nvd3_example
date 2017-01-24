@@ -20,11 +20,6 @@
 
     <script type="text/javascript">
     $(document).ready(function() {
-        var baseLinePosition = -0.65;
-        var baseLineColor = 'red';
-        var baseLineDashArray = [5, 5];
-        var baseLineWidth = 5;
-
         nv.addGraph(function() {
             var chart = nv.models.lineChart()
                                   .useInteractiveGuideline(true)
@@ -46,35 +41,61 @@
                 .call(chart)
                 ;
 
+            var baselines = [
+                {
+                    'value': 0.7,
+                    'color': 'red',
+                    'width': 3,
+                    'dash': [15, 10]
+                },
+                {
+                    'value': -0.65,
+                    'color': 'blue',
+                    'width': 1,
+                    'dash': [5, 5]
+                },
+                {
+                    'value': -0.35,
+                    'color': 'orange',
+                    'width': 1,
+                    'dash': [1, 0]
+                },
+            ];
+
+            var init = true;
+
             // draw base line
             function drawBaseLine() {
-                d3.select('svg').append('line')
-                    .attr({
-                        'x1': chart.xScale()(0) + chart.margin().left,
-                        'y1': chart.yScale()(baseLinePosition) + chart.margin().top,
-                        'x2': chart.xScale()(chart.xAxis.domain()[1]) + chart.margin().left,
-                        'y2': chart.yScale()(baseLinePosition) + chart.margin().top,
-                        'stroke-width': baseLineWidth,
-                        'stroke-dasharray': baseLineDashArray,
-                        'stroke': baseLineColor
-                    });
+                var selectLines = d3.select('svg#line-1').selectAll('line.baseline').data(baselines);
 
-                d3.select('svg').append('line')
+                if(init) {
+                    selectLines
+                        .enter()
+                        .append('line')
+                        .attr('class', 'baseline')
+                    ;
+
+                    init = false;
+                }
+
+                selectLines
                     .attr({
                         'x1': chart.xScale()(0) + chart.margin().left,
-                        'y1': chart.yScale()(0.7) + chart.margin().top,
+                        'y1': function(d) { return chart.yScale()(d.value) + chart.margin().top; },
                         'x2': chart.xScale()(chart.xAxis.domain()[1]) + chart.margin().left,
-                        'y2': chart.yScale()(-0.7) + chart.margin().top,
-                        'stroke-width': 2,
-                        'stroke-dasharray': [10, 5, 10],
-                        'stroke': 'blue'
-                    });
+                        'y2': function(d) { return chart.yScale()(d.value) + chart.margin().top; },
+                        'stroke-width': function(d) { return d.width; },
+                        'stroke-dasharray': function(d) { return d.dash; },
+                        'stroke': function(d) { return d.color; }
+                    })
+                ;
             }
 
             nv.utils.windowResize(function() {
                 chart.update();
                 drawBaseLine();
             });
+            d3.selectAll('svg#line-1 .nv-series *').on('click', function() { setTimeout(drawBaseLine, 350); });
 
             drawBaseLine();
 
